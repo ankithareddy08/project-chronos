@@ -307,7 +307,7 @@ export default function Home() {
 
       {/* TOP HEADER */}
       <header className="fixed top-0 w-full z-50 bg-slate-950/40 backdrop-blur-xl border-b border-white/10 shadow-2xl shadow-cyan-900/20">
-        {/* Header Row 1 - Logo, Title, Actions */}
+        {/* Header Row 1 - Logo, Title, Search Icon */}
         <div className="flex justify-between items-center w-full gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 py-3">
           {/* Logo */}
           <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
@@ -341,23 +341,9 @@ export default function Home() {
             PROJECT CHRONOS
           </h1>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 relative">
-            {searchOpen && (
-              <input
-                type="text"
-                placeholder="Search locations..."
-                className="absolute right-12 px-3 py-1 rounded bg-slate-900/50 border border-cyan-500/30 text-cyan-400 placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 w-48"
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch(searchQuery);
-                  }
-                }}
-              />
-            )}
+          {/* Search Icon Only */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Search Icon */}
             <Search
               size={18}
               className="sm:w-5 sm:h-5 text-slate-400 hover:text-cyan-400 transition cursor-pointer"
@@ -366,17 +352,54 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Header Row 2 - Status Pills Below Title */}
-        <div className="w-full px-4 sm:px-6 lg:px-8 pb-3 flex" style={{ justifyContent: 'center' }}>
-          <div className="flex gap-2" style={{ marginRight: 'auto', marginLeft: 'calc(50% - 20px)' }}>
-            <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-[8px] sm:text-[9px] lg:text-[10px] font-bold text-cyan-400 uppercase tracking-tighter whitespace-nowrap">
+        {/* Header Row 2 - Status Pills Exactly Below Title */}
+        <div className="flex justify-between items-center w-full gap-2 sm:gap-4 px-4 sm:px-6 lg:px-8 pb-3">
+          {/* Left - invisible logo spacer (exact copy from Row 1) */}
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 invisible pointer-events-none">
+            <GlobeIcon size={20} className="sm:w-6 sm:h-6" />
+            <div className="hidden sm:flex items-center text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-widest text-slate-400 font-headline whitespace-nowrap gap-1 sm:gap-2">
+              <span>Map</span>
+              <span>/</span>
+              <span>Global Events</span>
+              <span>/</span>
+              <span>Status</span>
+            </div>
+          </div>
+
+          {/* Center - buttons */}
+          <div className="flex gap-2 flex-wrap justify-center flex-1">
+            <span className="px-2 sm:px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-[7px] sm:text-[8px] lg:text-[10px] font-bold text-cyan-400 uppercase tracking-tighter whitespace-nowrap">
               Premium Tier Active
             </span>
-            <span className="px-3 py-1 rounded-full bg-lime-500/10 border border-lime-500/20 text-[8px] sm:text-[9px] lg:text-[10px] font-bold text-lime-400 uppercase tracking-tighter whitespace-nowrap">
+            <span className="px-2 sm:px-3 py-1 rounded-full bg-lime-500/10 border border-lime-500/20 text-[7px] sm:text-[8px] lg:text-[10px] font-bold text-lime-400 uppercase tracking-tighter whitespace-nowrap">
               Latency Status Sync
             </span>
           </div>
+
+          {/* Right - invisible search spacer (exact copy from Row 1) */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 invisible pointer-events-none">
+            <Search size={18} className="sm:w-5 sm:h-5" />
+          </div>
         </div>
+
+        {/* Header Row 3 - Mobile Search Input (Mobile only, shows when searchOpen) */}
+        {searchOpen && (
+          <div className="sm:hidden w-full px-4 pb-3 flex justify-center">
+            <input
+              type="text"
+              placeholder="Search locations..."
+              className="px-3 py-2 rounded bg-slate-900/50 border border-cyan-500/30 text-cyan-400 placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-400 w-full max-w-sm"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(searchQuery);
+                }
+              }}
+            />
+          </div>
+        )}
       </header>
 
       {/* MAIN LAYOUT CONTAINER */}
