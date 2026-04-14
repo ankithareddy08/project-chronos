@@ -28,7 +28,10 @@ export async function GET() {
   }
 
   try {
-    // Fetch both APIs in parallel
+    // Fetch both APIs in parallel with timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
     const [earthquakeRes, flightRes] = await Promise.all([
       fetch(
         'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson',
@@ -37,6 +40,7 @@ export async function GET() {
           headers: {
             'User-Agent': 'ProjectChronos/1.0',
           },
+          signal: controller.signal,
         }
       ),
       // OpenSky Network API - no authentication required for basic queries
@@ -45,35 +49,53 @@ export async function GET() {
         headers: {
           'User-Agent': 'ProjectChronos/1.0',
         },
+        signal: controller.signal,
       }),
-    ]);
+    ]).catch((err) => {
+      clearTimeout(timeout);
+      throw err;
+    });
+
+    clearTimeout(timeout);
 
     let earthquakeData = { features: [] };
     let flightData = { states: [] };
 
     if (earthquakeRes.ok) {
-      earthquakeData = await earthquakeRes.json();
+      try {
+        earthquakeData = await earthquakeRes.json();
+      } catch (err) {
+        console.error('Failed to parse earthquake data:', err);
+      }
+    } else {
+      console.error('Earthquake API failed:', earthquakeRes.status, earthquakeRes.statusText);
     }
 
     if (flightRes.ok) {
-      const rawFlights = await flightRes.json();
-      // OpenSky returns array of arrays; convert to structured format
-      if (Array.isArray(rawFlights.states)) {
-        flightData = {
-          states: rawFlights.states
-            .filter((flight: any[]) => flight[5] !== null && flight[6] !== null) // Has lat/lon
-            .slice(0, 100) // Limit to 100 flights for performance
-            .map((flight: any[]) => ({
-              icao24: flight[0],
-              callsign: flight[1]?.trim() || 'N/A',
-              origin_country: flight[2],
-              latitude: flight[5],
-              longitude: flight[6],
-              altitude: flight[7],
-              velocity: flight[9],
-            })),
-        };
+      try {
+        const rawFlights = await flightRes.json();
+        // OpenSky returns array of arrays; convert to structured format
+        if (Array.isArray(rawFlights.states)) {
+          flightData = {
+            states: rawFlights.states
+              .filter((flight: any[]) => flight[5] !== null && flight[6] !== null) // Has lat/lon
+              .slice(0, 100) // Limit to 100 flights for performance
+              .map((flight: any[]) => ({
+                icao24: flight[0],
+                callsign: flight[1]?.trim() || 'N/A',
+                origin_country: flight[2],
+                latitude: flight[5],
+                longitude: flight[6],
+                altitude: flight[7],
+                velocity: flight[9],
+              })),
+          };
+        }
+      } catch (err) {
+        console.error('Failed to parse flight data:', err);
       }
+    } else {
+      console.error('Flight API failed:', flightRes.status, flightRes.statusText);
     }
 
     // Update cache
@@ -95,7 +117,7 @@ export async function GET() {
       }
     );
   } catch (error) {
-    console.error('Error fetching telemetry data:', error);
+    console.error('Error fetching telemetry data:', error instanceof Error ? error.message : String(error));
 
     // Return stale cache if available
     if (cache) {
