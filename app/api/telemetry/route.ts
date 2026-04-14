@@ -108,8 +108,8 @@ export async function GET() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
 
-    let earthquakeData = { features: [] };
-    let flightData = { states: [] };
+    let earthquakeData: typeof MOCK_EARTHQUAKES = MOCK_EARTHQUAKES;
+    let flightData: typeof MOCK_FLIGHTS = MOCK_FLIGHTS;
 
     try {
       const [earthquakeRes, flightRes] = await Promise.all([
