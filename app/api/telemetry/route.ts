@@ -104,14 +104,16 @@ export async function GET() {
   }
 
   try {
-    // Fetch both APIs in parallel with timeout
+    // Fetch both APIs in parallel with longer timeout for Vercel
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout for Vercel
 
     let earthquakeData: typeof MOCK_EARTHQUAKES = MOCK_EARTHQUAKES;
     let flightData: typeof MOCK_FLIGHTS = MOCK_FLIGHTS;
+    let usedRealData = false;
 
     try {
+      console.log('Fetching real telemetry data...');
       const [earthquakeRes, flightRes] = await Promise.all([
         fetch(
           'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson',
@@ -135,19 +137,21 @@ export async function GET() {
       if (earthquakeRes.ok) {
         try {
           earthquakeData = await earthquakeRes.json();
+          console.log('Successfully fetched real earthquake data');
+          usedRealData = true;
         } catch (err) {
-          console.error('Failed to parse earthquake data:', err);
+          console.warn('Failed to parse earthquake data, using mock:', err);
           earthquakeData = MOCK_EARTHQUAKES;
         }
       } else {
-        console.warn('Earthquake API failed, using mock data:', earthquakeRes.status);
+        console.warn('Earthquake API returned status:', earthquakeRes.status);
         earthquakeData = MOCK_EARTHQUAKES;
       }
 
       if (flightRes.ok) {
         try {
           const rawFlights = await flightRes.json();
-          if (Array.isArray(rawFlights.states)) {
+          if (Array.isArray(rawFlights.states) && rawFlights.states.length > 0) {
             flightData = {
               states: rawFlights.states
                 .filter((flight: any[]) => flight[5] !== null && flight[6] !== null)
@@ -162,19 +166,25 @@ export async function GET() {
                   velocity: flight[9],
                 })),
             };
+            console.log('Successfully fetched real flight data');
+            usedRealData = true;
           } else {
+            console.warn('Flight API returned empty states, using mock');
             flightData = MOCK_FLIGHTS;
           }
         } catch (err) {
-          console.error('Failed to parse flight data:', err);
+          console.warn('Failed to parse flight data, using mock:', err);
           flightData = MOCK_FLIGHTS;
         }
       } else {
-        console.warn('Flight API failed, using mock data:', flightRes.status);
+        console.warn('Flight API returned status:', flightRes.status);
         flightData = MOCK_FLIGHTS;
       }
     } catch (fetchError) {
-      console.warn('API fetch timed out or failed, using mock data:', fetchError instanceof Error ? fetchError.message : String(fetchError));
+      console.warn(
+        'API fetch failed:',
+        fetchError instanceof Error ? fetchError.message : String(fetchError)
+      );
       earthquakeData = MOCK_EARTHQUAKES;
       flightData = MOCK_FLIGHTS;
     } finally {
@@ -192,6 +202,7 @@ export async function GET() {
       {
         earthquakes: earthquakeData,
         flights: flightData,
+        source: usedRealData ? 'real' : 'mock',
       },
       {
         headers: {
@@ -206,6 +217,7 @@ export async function GET() {
       {
         earthquakes: MOCK_EARTHQUAKES,
         flights: MOCK_FLIGHTS,
+        source: 'mock',
       },
       {
         headers: {
